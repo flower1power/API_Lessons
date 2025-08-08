@@ -18,14 +18,16 @@ class LoginApi:
         self.host = host
         self.headers = headers
 
-    def post_v1_account_login(self, json_data: UserLoginData):
+    def post_v1_account_login(self, json_data: UserLoginData, **kwargs):
         """
-         Authenticate via credential
-         :param json_data: UserLoginData
-         :return: response
-         """
+        Authenticate via credential
+        :param json_data: UserLoginData
+        :param **kwargs: дополнительные аргументы для requests.post
+        :return: response
+        """
         response = requests.post(
             url=f'{self.host}/v1/account/login',
             json=json_data
+            **kwargs
         )
         return response

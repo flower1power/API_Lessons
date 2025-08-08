@@ -6,7 +6,7 @@ from dm_api_account.apis.account_api import AccountApi, UserCredentials
 from mailhog_api.apis.mailhog_api import MailhogApi
 
 
-def test_post_v1_account():
+def test_put_v1_account_token():
     faker = Faker()
     account_api = AccountApi(host='http://5.63.153.31:5051')
     mailhog_api = MailhogApi(host='http://5.63.153.31:5025')
