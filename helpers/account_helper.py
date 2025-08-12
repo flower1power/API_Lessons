@@ -20,7 +20,7 @@ def retrier(function):
         count = 0
 
         while token is None:
-            print(f"Попытка получение токена номер: {count}")
+            print(f"Попытка получения токена номер: {count}")
             token = function(*args, **kwargs)
             count += 1
 
@@ -67,7 +67,7 @@ class AccountHelper:
         response = self._dm_account.login_api.post_v1_account_login(json_data=json_data)
         assert response.status_code == 200, 'Пользователь не смог авторизоваться'
 
-    @retry(stop_max_attemp_number=5, retry_on_result=retry_if_result_none, wait_fixed=1000)
+    @retry(stop_max_attempt_number=5, retry_on_result=retry_if_result_none, wait_fixed=1000)
     def get_activation_token_by_login(self, login: str):
         token = None
         response = self._mailhog.mailhog_api.get_api_v2_messages()
