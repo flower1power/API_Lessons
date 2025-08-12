@@ -1,6 +1,6 @@
 from typing import TypedDict
 
-import requests
+from rest_client.client import RestClient
 
 
 class UserLoginData(TypedDict):
@@ -9,14 +9,8 @@ class UserLoginData(TypedDict):
     rememberMe: bool
 
 
-class LoginApi:
-    def __init__(
-            self,
-            host: str,
-            headers: str = None
-    ):
-        self.host = host
-        self.headers = headers
+class LoginApi(RestClient):
+    _v1_login = '/v1/account/login'
 
     def post_v1_account_login(self, json_data: UserLoginData, **kwargs):
         """
@@ -25,8 +19,8 @@ class LoginApi:
         :param **kwargs: дополнительные аргументы для requests.post
         :return: response
         """
-        response = requests.post(
-            url=f'{self.host}/v1/account/login',
+        response = self.post(
+            path=self._v1_login,
             json=json_data,
             **kwargs
         )
