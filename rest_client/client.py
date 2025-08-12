@@ -7,32 +7,62 @@ import structlog
 from requests import session
 from requests.exceptions import JSONDecodeError
 
+from rest_client.configuration import Configuration
+
 HttpMethod = Literal["GET", "POST", "PUT", "DELETE"]
 
 
 class RestClient:
 
-    def __init__(self, host: str, headers: str = None):
-        self.host = host
-        self.headers = headers
+    def __init__(self, configuration: Configuration):
+        self.host = configuration.host
+        self.headers = configuration.headers
+        self.disable_log = configuration.disable_log
         self.session = session()
         self.log = structlog.getLogger(__name__).bind(service='api')
 
     def get(self, path: str, **kwargs):
+        """
+        GET request
+        :param path: endpoint
+        :param kwargs: остальные параметры
+        :return: response
+        """
         return self._send_request(method="GET", path=path, **kwargs)
 
     def post(self, path: str, **kwargs):
+        """
+          POST request
+          :param path: endpoint
+          :param kwargs: остальные параметры
+          :return: response
+          """
         return self._send_request(method="POST", path=path, **kwargs)
 
     def put(self, path: str, **kwargs):
+        """
+          PUT request
+          :param path: endpoint
+          :param kwargs: остальные параметры
+          :return: response
+          """
         return self._send_request(method="PUT", path=path, **kwargs)
 
     def delete(self, path: str, **kwargs):
+        """
+          DELETE request
+          :param path: endpoint
+          :param kwargs: остальные параметры
+          :return: response
+          """
         return self._send_request(method="DELETE", path=path, **kwargs)
 
     def _send_request(self, method: HttpMethod, path: str, **kwargs):
         log = self.log.bind(event_id=str(uuid.uuid4()))
         full_url = urljoin(self.host, path.lstrip("/"))
+
+        if self.disable_log:
+            return self.session.request(method=method, url=full_url, **kwargs)
 
         log.msg(
             event='Request',

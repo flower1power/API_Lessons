@@ -1,15 +1,27 @@
 from json import loads
 
+import structlog
 from faker import Faker
 
 from dm_api_account.apis.account_api import AccountApi, UserCredentials
 from mailhog_api.apis.mailhog_api import MailhogApi
+from rest_client.configuration import Configuration as DmApiConfiguration
+from rest_client.configuration import Configuration as MailhogConfiguration
+
+structlog.configure(
+    processors=[
+        structlog.processors.JSONRenderer(indent=4, ensure_ascii=True)
+    ]
+)
 
 
 def test_put_v1_account_token():
     faker = Faker()
-    account_api = AccountApi(host='http://5.63.153.31:5051')
-    mailhog_api = MailhogApi(host='http://5.63.153.31:5025')
+    mailhog_configuration = MailhogConfiguration(host='http://5.63.153.31:5025', disable_log=True)
+    dm_api_configuration = DmApiConfiguration(host='http://5.63.153.31:5051')
+
+    account_api = AccountApi(configuration=dm_api_configuration)
+    mailhog_api = MailhogApi(configuration=mailhog_configuration)
 
     login = faker.name().replace(' ', '')
     password = faker.password()
