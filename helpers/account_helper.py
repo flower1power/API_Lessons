@@ -1,23 +1,51 @@
 import time
 from json import loads
+from typing import Any, Callable, TypeVar
 
-from retrying import retry
+from requests.models import Response
 
 from dm_api_account.apis.account_api import UserCredentials
 from dm_api_account.apis.login_api import UserLoginData
 from services.api_dm_account import ApiDmAccount
 from services.api_mailhog import ApiMailhog
 
+T = TypeVar('T')
 
-def retry_if_result_none(result):
-    """Return True if we should retry (in this case when result is None), False otherwise"""
+
+def retry_if_result_none(result: T) -> bool:
+    """
+    Проверяет, является ли результат None для механизма повторных попыток.
+    
+    Args:
+        result (T): Результат функции для проверки
+        
+    Returns:
+        bool: True если результат None, False в противном случае
+    """
     return result is None
 
 
-def retrier(function):
-    def wrapper(*args, **kwargs):
+def retrier(function: Callable[..., T]) -> Callable[..., T]:
+    """
+    Декоратор для повторного выполнения функции до получения результата.
+    
+    Выполняет функцию до 5 раз с интервалом в 1 секунду, пока не получит
+    не-None результат или не превысит лимит попыток.
+    
+    Args:
+        function (Callable[..., T]): Функция для декорирования
+        
+    Returns:
+        Callable[..., T]: Обернутая функция с логикой повторных попыток
+        
+    Raises:
+        AssertionError: Если превышено количество попыток (5)
+    """
+
+    def wrapper(*args: Any, **kwargs: Any) -> T:
         token = None
         count = 0
+        sleep = 1
 
         while token is None:
             print(f"Попытка получения токена номер: {count}")
@@ -27,50 +55,135 @@ def retrier(function):
             if token:
                 return token
 
-            if count == 5:
+            if count == 10:
                 raise AssertionError("Превышено количество попыток получения токена")
-            time.sleep(1)
+            sleep = sleep * count
+            time.sleep(sleep)
 
     return wrapper
 
 
 class AccountHelper:
-    def __init__(self, api_dm_account: ApiDmAccount, api_mailhog: ApiMailhog):
-        self._dm_account = api_dm_account
-        self._mailhog = api_mailhog
+    """
+    Вспомогательный класс для работы с аккаунтами пользователей.
+    
+    Предоставляет высокоуровневые методы для регистрации, авторизации
+    и управления пользователями через API.
+    """
 
-    def register_new_user(self, login: str, password: str, email: str):
+    def __init__(self, api_dm_account: ApiDmAccount, api_mailhog: ApiMailhog):
+        self.dm_account = api_dm_account
+        self.mailhog = api_mailhog
+
+    def register_new_user(self, login: str, password: str, email: str) -> Response:
+        """
+        Регистрация нового пользователя с последующей активацией.
+        
+        Создает нового пользователя, получает токен активации из почты
+        и активирует аккаунт.
+        
+        Args:
+            login (str): Логин пользователя
+            password (str): Пароль пользователя
+            email (str): Email адрес пользователя
+            
+        Returns:
+            Response: HTTP ответ от сервера после активации пользователя
+            
+        Raises:
+            AssertionError: Если пользователь не был создан, токен не получен
+            или пользователь не был активирован
+        """
         json_data: UserCredentials = {
             "login": login,
             "email": email,
             "password": password,
         }
 
-        response = self._dm_account.account_api.post_v1_account(json_data=json_data)
+        response = self.dm_account.account_api.post_v1_account(json_data=json_data)
         assert response.status_code == 201, f'Пользователь не был создан {response.json()}'
 
         token = self.get_activation_token_by_login(login=login)
         assert token is not None, f'Токен для пользователя {login}, не был получен'
 
-        response = self._dm_account.account_api.put_v1_account_token(token=token)
+        response = self.dm_account.account_api.put_v1_account_token(token=token)
         assert response.status_code == 200, 'Пользователь не был активирован'
 
         return response
 
-    def user_login(self, login: str, password: str, rememberMe: bool = True):
+    def user_login(self, login: str, password: str, rememberMe: bool = True) -> Response:
+        """
+        Авторизация пользователя в системе.
+        
+        Args:
+            login (str): Логин пользователя
+            password (str): Пароль пользователя
+            rememberMe (bool, optional): Флаг "запомнить меня". По умолчанию True
+            
+        Returns:
+            Response: HTTP ответ от сервера с результатом авторизации
+            
+        Raises:
+            AssertionError: Если пользователь не смог авторизоваться
+        """
         json_data: UserLoginData = {
             'login': login,
             'password': password,
             'rememberMe': rememberMe
         }
 
-        response = self._dm_account.login_api.post_v1_account_login(json_data=json_data)
+        response = self.dm_account.login_api.post_v1_account_login(json_data=json_data)
         assert response.status_code == 200, 'Пользователь не смог авторизоваться'
 
-    @retry(stop_max_attempt_number=5, retry_on_result=retry_if_result_none, wait_fixed=1000)
-    def get_activation_token_by_login(self, login: str):
+        return response
+
+    def auth_client(self, login: str, password: str) -> None:
+        """
+        Авторизация клиента и установка токена аутентификации в заголовки.
+        
+        Выполняет вход в систему и устанавливает полученный токен
+        в заголовки для последующих запросов.
+        
+        Args:
+            login (str): Логин пользователя
+            password (str): Пароль пользователя
+
+        Raises:
+            AssertionError: Если пользователь не смог авторизоваться
+        """
+        response = self.dm_account.login_api.post_v1_account_login(
+            json_data={'login': login, 'password': password}
+        )
+        assert response.status_code == 200, 'Пользователь не смог авторизоваться'
+
+        token = {
+            "x-dm-auth-token": response.headers["x-dm-auth-token"]
+        }
+
+        self.dm_account.account_api.set_headers(token)
+        self.dm_account.login_api.set_headers(token)
+
+    # @retry(stop_max_attempt_number=5, retry_on_result=retry_if_result_none, wait_fixed=1000)
+    @retrier
+    def get_activation_token_by_login(self, login: str) -> str:
+        """
+        Получение токена активации для пользователя по логину.
+        
+        Ищет письмо с токеном активации в почтовом ящике Mailhog
+        для указанного пользователя.
+        
+        Args:
+            login (str): Логин пользователя для поиска токена
+            
+        Returns:
+            str: Токен активации пользователя
+            
+        Raises:
+            AssertionError: Если письма не были получены
+        """
         token = None
-        response = self._mailhog.mailhog_api.get_api_v2_messages()
+        response = self.mailhog.mailhog_api.get_api_v2_messages()
+        assert response.status_code == 200, 'Письма не были получены'
 
         for item in response.json()['items']:
             user_data = loads(item['Content']['Body'])
@@ -79,3 +192,125 @@ class AccountHelper:
                 token = user_data['ConfirmationLinkUrl'].split('/')[-1]
 
         return token
+
+    @retrier
+    def get_reset_password_token_by_login(self, login: str) -> str:
+        """
+        Получение токена сброса пароля для пользователя по логину.
+        
+        Ищет письмо с токеном сброса пароля в почтовом ящике Mailhog
+        для указанного пользователя. Токен используется для смены пароля
+        через API.
+        
+        Args:
+            login (str): Логин пользователя для поиска токена
+            
+        Returns:
+            str: Токен сброса пароля пользователя
+            
+        Raises:
+            AssertionError: Если письма не были получены
+        """
+        token = None
+        response = self.mailhog.mailhog_api.get_api_v2_messages()
+        assert response.status_code == 200, 'Письма не были получены'
+        for item in response.json()['items']:
+            user_data = loads(item['Content']['Body'])
+            user_login = user_data['Login']
+            if user_login == login:
+                # Используем только ConfirmationLinkUri для получения токена сброса пароля
+                if 'ConfirmationLinkUri' in user_data:
+                    token = user_data['ConfirmationLinkUri'].split('/')[-1]
+
+        return token
+
+    def change_password(self, login: str, email: str, old_password: str, new_password: str) -> Response:
+        """
+        Смена пароля пользователя с использованием токена сброса пароля.
+        
+        Процесс смены пароля включает:
+        1. Запрос на сброс пароля через API
+        2. Получение токена сброса пароля из письма
+        3. Выполнение запроса на изменение пароля
+        
+        Args:
+            login (str): Логин пользователя
+            email (str): Email адрес пользователя
+            old_password (str): Текущий пароль пользователя
+            new_password (str): Новый пароль пользователя
+            
+        Returns:
+            Response: HTTP ответ от сервера с результатом смены пароля
+            
+        Raises:
+            AssertionError: Если токен сброса пароля не получен или смена пароля не удалась
+        """
+        self.dm_account.account_api.post_v1_account_password(login=login, email=email)
+        reset_token = self.get_reset_password_token_by_login(login=login)
+        assert reset_token is not None, f'Токен для сброса пароля пользователя {login} не был получен'
+
+        response = self.dm_account.account_api.put_v1_account_change_password(
+            {"login": login, "token": reset_token, "oldPassword": old_password, "newPassword": new_password})
+        assert response.status_code == 200, 'Не удалось изменить пароль'
+
+        return response
+
+    def change_email(self, login: str, new_email: str, password: str) -> Response:
+        response = self.dm_account.account_api.put_v1_account_change_email(
+            {"login": login, "password": password, "email": new_email})
+        assert response.status_code == 200, 'Не удалось изменить почту'
+
+        return response
+
+    def logout_user(self) -> Response:
+        """
+        Выход пользователя из системы на текущем устройстве.
+        
+        Удаляет текущую сессию пользователя, делая токен аутентификации
+        недействительным для текущего устройства.
+        
+        Returns:
+            Response: HTTP ответ от сервера с результатом выхода
+            
+        Note:
+            Требует предварительной авторизации пользователя
+        """
+        response = self.dm_account.login_api.delete_v1_account_login()
+        assert response.status_code == 204, 'Не удалось выйти из аккаунта'
+
+        return response
+
+    def logout_user_all_device(self) -> Response:
+        """
+        Выход пользователя из системы на всех устройствах.
+        
+        Удаляет все активные сессии пользователя, делая все токены
+        аутентификации недействительными на всех устройствах.
+        
+        Returns:
+            Response: HTTP ответ от сервера с результатом выхода
+            
+        Note:
+            Требует предварительной авторизации пользователя
+        """
+        response = self.dm_account.login_api.delete_v1_account_login_all()
+        assert response.status_code == 204, 'Не удалось выйти из аккаунта'
+
+        return response
+
+    def activate_user(self, token: str) -> Response:
+        """
+        Активация зарегистрированного пользователя по токену.
+
+        Args:
+            token (str): Токен активации, полученный при регистрации
+            **kwargs: Дополнительные параметры для HTTP запроса
+
+        Returns:
+            Response: HTTP ответ от сервера с результатом активации
+        """
+
+        response = self.dm_account.account_api.put_v1_account_token(token=token)
+        assert response.status_code == 200, 'Пользователь не был активирован'
+
+        return response
