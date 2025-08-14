@@ -1,6 +1,6 @@
 from typing import TypedDict
 
-import requests
+from rest_client.client import RestClient
 
 
 class UserCredentials(TypedDict):
@@ -9,10 +9,8 @@ class UserCredentials(TypedDict):
     password: str
 
 
-class AccountApi:
-    def __init__(self, host: str, headers: str = None):
-        self.host = host
-        self.headers = headers
+class AccountApi(RestClient):
+    _v1_account = '/v1/account'
 
     def post_v1_account(self, json_data: UserCredentials, **kwargs):
         """
@@ -21,8 +19,8 @@ class AccountApi:
         :param **kwargs: дополнительные аргументы для requests.post
         :return: response
         """
-        return requests.post(
-            url=f'{self.host}/v1/account',
+        return self.post(
+            path=self._v1_account,
             json=json_data,
             **kwargs
         )
@@ -37,8 +35,8 @@ class AccountApi:
         headers = {
             'accept': 'text/plain'
         }
-        return requests.put(
-            url=f'{self.host}/v1/account/{token}',
+        return self.put(
+            path=f'{self._v1_account}/{token}',
             headers=headers,
             **kwargs
         )
@@ -50,8 +48,8 @@ class AccountApi:
         :param **kwargs: дополнительные аргументы для requests.put
         :return:
         """
-        return requests.put(
-            url=f'{self.host}/v1/account/email',
+        return self.put(
+            path=f'{self._v1_account}/email',
             json=json_data,
             **kwargs
         )

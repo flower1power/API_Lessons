@@ -1,17 +1,29 @@
 from json import loads
 
+import structlog
 from faker import Faker
 
-from dm_api_account.apis.account_api import AccountApi, UserCredentials
-from dm_api_account.apis.login_api import LoginApi, UserLoginData
+from dm_api_account.apis.account_api import UserCredentials, AccountApi
+from dm_api_account.apis.login_api import UserLoginData, LoginApi
 from mailhog_api.apis.mailhog_api import MailhogApi
+from rest_client.configuration import Configuration as DmApiConfiguration
+from rest_client.configuration import Configuration as MailhogConfiguration
+
+structlog.configure(
+    processors=[
+        structlog.processors.JSONRenderer(indent=4, ensure_ascii=True)
+    ]
+)
 
 
 def test_post_v1_account():
     faker = Faker()
-    account_api = AccountApi(host='http://5.63.153.31:5051')
-    login_api = LoginApi(host='http://5.63.153.31:5051')
-    mailhog_api = MailhogApi(host='http://5.63.153.31:5025')
+    mailhog_configuration = MailhogConfiguration(host='http://5.63.153.31:5025', disable_log=True)
+    dm_api_configuration = DmApiConfiguration(host='http://5.63.153.31:5051')
+
+    account_api = AccountApi(configuration=dm_api_configuration)
+    login_api = LoginApi(configuration=dm_api_configuration)
+    mailhog_api = MailhogApi(configuration=mailhog_configuration)
 
     login = faker.name().replace(' ', '')
     password = faker.password()
@@ -27,10 +39,10 @@ def test_post_v1_account():
 
     response = mailhog_api.get_api_v2_messages()
     assert response.status_code == 200, 'Письма не были получены'
-
+    #
     token = get_activation_token_by_login(login=login, response=response)
     assert token is not None, f'Токен для пользователя {login}, не был получен'
-
+    #
     response = account_api.put_v1_account_token(token=token)
     assert response.status_code == 200, 'Пользователь не был активирован'
 
