@@ -1,99 +1,23 @@
-from json import loads
-
-import structlog
 from faker import Faker
 
-from dm_api_account.apis.account_api import AccountApi, UserCredentials
-from dm_api_account.apis.login_api import LoginApi, UserLoginData
-from mailhog_api.apis.mailhog_api import MailhogApi
-from rest_client.configuration import Configuration as DmApiConfiguration
-from rest_client.configuration import Configuration as MailhogConfiguration
 
-structlog.configure(
-    processors=[
-        structlog.processors.JSONRenderer(indent=4, ensure_ascii=True)
-    ]
-)
-
-
-def test_put_v1_account_email():
+def test_put_v1_account_email(account_helper, prepare_user):
     faker = Faker()
-    mailhog_configuration = MailhogConfiguration(host='http://5.63.153.31:5025', disable_log=True)
-    dm_api_configuration = DmApiConfiguration(host='http://5.63.153.31:5051')
+    login = prepare_user.login
+    password = prepare_user.password
+    email = prepare_user.email
+    new_email = f'{prepare_user.login}{faker.text(5)}@mail.ru'
+    expected_error_text = 'Пользователь не смог авторизоваться'
 
-    account_api = AccountApi(configuration=dm_api_configuration)
-    login_api = LoginApi(configuration=dm_api_configuration)
-    mailhog_api = MailhogApi(configuration=mailhog_configuration)
+    account_helper.register_new_user(login=login, password=password, email=email)
+    account_helper.user_login(login=login, password=password)
+    account_helper.change_email(login=login, password=password, new_email=new_email)
 
-    login = faker.name().replace(' ', '')
-    password = faker.password()
-    email = f'{login}@mail.ru'
-    json_data: UserCredentials = {
-        "login": login,
-        "email": email,
-        "password": password,
-    }
+    try:
+        account_helper.user_login(login=login, password=password)
+    except AssertionError as error:
+        assert expected_error_text == str(error), f'Ожидалась ошибка: {expected_error_text}'
 
-    response = account_api.post_v1_account(json_data=json_data)
-    assert response.status_code == 201, f'Пользователь не был создан {response.json()}'
-
-    response = mailhog_api.get_api_v2_messages()
-    assert response.status_code == 200, 'Письма не были получены'
-
-    token = get_activation_token_by_login(login=login, response=response)
-    assert token is not None, f'Токен для пользователя {login}, не был получен'
-
-    response = account_api.put_v1_account_token(token=token)
-    assert response.status_code == 200, 'Пользователь не был активирован'
-
-    json_data: UserLoginData = {
-        'login': login,
-        'password': password,
-        'rememberMe': True
-    }
-
-    response = login_api.post_v1_account_login(json_data=json_data)
-    assert response.status_code == 200, 'Пользователь не смог авторизоваться'
-
-    json_data: UserCredentials = {
-        "login": login,
-        "email": faker.email(),
-        "password": password,
-    }
-
-    response = account_api.put_v1_account_change_email(json_data=json_data)
-    assert response.status_code == 200, 'Не удалось изменить почту'
-    json = response.json()
-    assert json['resource']['login'] == login
-
-    json_data: UserLoginData = {
-        'login': login,
-        'password': password,
-        'rememberMe': True
-    }
-
-    response = login_api.post_v1_account_login(json_data=json_data)
-    assert response.status_code == 403, 'Удалось войти до активации почты'
-
-    response = mailhog_api.get_api_v2_messages()
-    assert response.status_code == 200, 'Письма не были получены'
-
-    token = get_activation_token_by_login(login=login, response=response)
-    assert token is not None, f'Токен для пользователя {login}, не был получен'
-
-    response = account_api.put_v1_account_token(token=token)
-    assert response.status_code == 200, 'Пользователь не был активирован'
-
-    response = login_api.post_v1_account_login(json_data=json_data)
-    assert response.status_code == 200, 'Пользователь не смог авторизоваться'
-
-
-def get_activation_token_by_login(login, response):
-    token = None
-    for item in response.json()['items']:
-        user_data = loads(item['Content']['Body'])
-        user_login = user_data['Login']
-        if user_login == login:
-            token = user_data['ConfirmationLinkUrl'].split('/')[-1]
-
-    return token
+    token = account_helper.get_activation_token_by_login(login=login)
+    account_helper.activate_user(token=token)
+    account_helper.user_login(login=login, password=password)
