@@ -1,6 +1,6 @@
 import time
 from json import loads
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, NoReturn
 
 from requests.models import Response
 
@@ -9,10 +9,8 @@ from dm_api_account.apis.login_api import UserLoginData
 from services.api_dm_account import ApiDmAccount
 from services.api_mailhog import ApiMailhog
 
-T = TypeVar('T')
 
-
-def retry_if_result_none(result: T) -> bool:
+def retry_if_result_none(result: Any) -> bool:
     """
     Проверяет, является ли результат None для механизма повторных попыток.
     
@@ -25,7 +23,7 @@ def retry_if_result_none(result: T) -> bool:
     return result is None
 
 
-def retrier(function: Callable[..., T]) -> Callable[..., T]:
+def retrier(function: Callable[..., str | NoReturn]) -> Callable[..., str | NoReturn]:
     """
     Декоратор для повторного выполнения функции до получения результата.
     
@@ -42,7 +40,7 @@ def retrier(function: Callable[..., T]) -> Callable[..., T]:
         AssertionError: Если превышено количество попыток (5)
     """
 
-    def wrapper(*args: Any, **kwargs: Any) -> T:
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         token = None
         count = 0
         sleep = 1
@@ -137,7 +135,7 @@ class AccountHelper:
 
         return response
 
-    def auth_client(self, login: str, password: str) -> None:
+    def auth_user(self, login: str, password: str) -> None:
         """
         Авторизация клиента и установка токена аутентификации в заголовки.
         
@@ -262,37 +260,59 @@ class AccountHelper:
 
         return response
 
-    def logout_user(self) -> Response:
+    def logout_user(self, token: str | None = None, **kwargs: Any) -> Response:
         """
         Выход пользователя из системы на текущем устройстве.
-        
-        Удаляет текущую сессию пользователя, делая токен аутентификации
-        недействительным для текущего устройства.
-        
+
+        По умолчанию использует текущие заголовки сессии клиента. Можно передать
+        конкретный `token`, чтобы разлогинить определённую сессию, отличную от
+        той, что установлена в сессии клиента. 
+
+        Args:
+            token (str | None): Опциональный токен `x-dm-auth-token` для разлогина
+                конкретной сессии.
+            **kwargs: Дополнительные параметры для HTTP запроса
+
         Returns:
             Response: HTTP ответ от сервера с результатом выхода
-            
+
         Note:
-            Требует предварительной авторизации пользователя
+            Требует предварительной авторизации пользователя или явной
+            передачи токена через аргумент `token` или `headers`.
         """
-        response = self.dm_account.login_api.delete_v1_account_login()
+
+        if token:
+            kwargs['headers'] = {**kwargs.get('headers'), 'x-dm-auth-token': token}
+
+        response = self.dm_account.login_api.delete_v1_account_login(**kwargs)
         assert response.status_code == 204, 'Не удалось выйти из аккаунта'
 
         return response
 
-    def logout_user_all_device(self) -> Response:
+    def logout_user_all_device(self, token: str | None = None, **kwargs: Any) -> Response:
         """
         Выход пользователя из системы на всех устройствах.
         
         Удаляет все активные сессии пользователя, делая все токены
         аутентификации недействительными на всех устройствах.
+        По умолчанию использует текущие заголовки сессии клиента. Можно передать
+        конкретный `token`. 
         
+        Args:
+            token (str | None): Опциональный токен `x-dm-auth-token` для разлогина
+                конкретной сессии.
+            **kwargs: Дополнительные параметры для HTTP запроса
+
         Returns:
             Response: HTTP ответ от сервера с результатом выхода
             
         Note:
-            Требует предварительной авторизации пользователя
+            Требует предварительной авторизации пользователя или явной
+            передачи токена через аргумент `token` или `headers`.
         """
+        if token:
+            kwargs['headers'] = {**kwargs.get('headers'), 'x-dm-auth-token': token}
+
         response = self.dm_account.login_api.delete_v1_account_login_all()
         assert response.status_code == 204, 'Не удалось выйти из аккаунта'
 

@@ -41,7 +41,7 @@ def auth_account_helper(mailhog_client: ApiMailhog):
     email = "DarrenDalton12_08_2025_22_43_04@mail.ru"
     password = "C^Uy3BbI8h"
 
-    account_helper.auth_client(login=login, password=password)
+    account_helper.auth_user(login=login, password=password)
 
     return account_helper
 

@@ -66,7 +66,6 @@ class LoginApi(RestClient):
         """
         return self.delete(
             path=f'{self._v1_login}',
-            headers=self.session.headers,
             **kwargs
         )
 
@@ -85,10 +84,9 @@ class LoginApi(RestClient):
             
         Note:
             Требует предварительной авторизации пользователя
-            (токен должен быть установлен в заголовках сессии)
+            (токен должен быть установлен в заголовках сессии или передан через **kwargs)
         """
         return self.delete(
             path=f'{self._v1_login}/all',
-            headers=self.session.headers,
             **kwargs
         )
