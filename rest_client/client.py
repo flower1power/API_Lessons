@@ -35,7 +35,7 @@ class RestClient:
         self.session = session()
         self.log = structlog.getLogger(__name__).bind(service='api')
 
-    def set_headers(self, headers: Optional[Dict[str, str]]) -> None:
+    def set_headers(self, headers: dict[str, str] | None) -> None:
         """
         Установка заголовков для HTTP запросов.
         
@@ -148,7 +148,7 @@ class RestClient:
         return rest_response
 
     @staticmethod
-    def _get_json(rest_response: Response) -> Dict[str, Any]:
+    def _get_json(rest_response: Response) -> dict[str, Any]:
         """
         Извлечение JSON данных из HTTP ответа.
         
