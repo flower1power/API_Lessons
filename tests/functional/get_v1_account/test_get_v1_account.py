@@ -1,9 +1,5 @@
 def test_get_v1_account_auth(auth_account_helper):
     response = auth_account_helper.dm_account.account_api.get_v1_account()
-    #  Тут упадет - не соответсвует модели "info": "" а должен быть {
-    #       "value": "string",
-    #       "parseMode": "Common"
-    #     }
 
 
 def test_get_v1_account(account_helper):
