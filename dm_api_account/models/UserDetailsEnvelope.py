@@ -61,7 +61,7 @@ class UserDetails(BaseModel):
     icq: str | None = None
     skype: str | None = None
     original_picture_url: str | None = Field(None, alias="originalPictureUrl")
-    info: InfoBbText
+    info: str
     settings: UserSettings
 
 

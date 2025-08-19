@@ -57,7 +57,6 @@ class AccountApi(RestClient):
             **kwargs
         )
 
-        print()
         if validate_response:
             return UserDetailsEnvelope(**response.json())
 
