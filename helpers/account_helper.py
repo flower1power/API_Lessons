@@ -131,6 +131,8 @@ class AccountHelper:
             password: str,
             remember_me: bool = True,
             validate_response=False,
+            validate_headers=False,
+
     ) -> Response | UserEnvelope:
         """
         Авторизация пользователя в системе.
@@ -140,6 +142,7 @@ class AccountHelper:
             password (str): Пароль пользователя
             remember_me (bool, optional): Флаг "запомнить меня". По умолчанию True
             validate_response (bool): Отключение валлидации pydantic
+            validate_headers (bool): Отключение валлидации headers
             
         Returns:
             Response: HTTP ответ от сервера с результатом авторизации
@@ -162,7 +165,9 @@ class AccountHelper:
         if validate_response:
             return response
 
-        assert response.headers["x-dm-auth-token"], "Токен для пользователя не был получен"
+        if validate_headers:
+            assert response.headers["x-dm-auth-token"], "Токен для пользователя не был получен"
+
         assert response.status_code == 200, 'Пользователь не смог авторизоваться'
 
         return response
