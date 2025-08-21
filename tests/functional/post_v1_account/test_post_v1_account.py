@@ -1,6 +1,14 @@
 from datetime import datetime
 
+import pytest
+from faker import Faker
 from hamcrest import assert_that, has_property, starts_with, all_of, instance_of, has_properties, equal_to
+
+from checkers.http_checkers import check_status_code_http
+
+faker = Faker()
+now = datetime.now()
+data = now.strftime("%d_%m_%Y_%H_%M_%S")
 
 
 def test_post_v1_account(account_helper, prepare_user):
@@ -25,3 +33,28 @@ def test_post_v1_account(account_helper, prepare_user):
             ),
         )
     )
+
+
+@pytest.mark.parametrize(
+    "login, password, email", [
+        (
+                f"{faker.name().replace(' ', '')}_{data}",
+                f"{faker.password(5)}",
+                f"{faker.email()}",
+        ),
+        (
+                f"{faker.name().replace(' ', '')}_{data}",
+                f"{faker.password(10)}",
+                f"{faker.email().replace('@', '')}",
+        ),
+        (
+                f"{faker.name()[0]}",
+                f"{faker.password(10)}",
+                f"{faker.email()}",
+        )
+
+    ]
+)
+def test_post_v1_account_invalid_credentials(account_helper, login, password, email):
+    with check_status_code_http(400, "Validation failed"):
+        account_helper.register_new_user(login=login, password=password, email=email)

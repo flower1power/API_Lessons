@@ -110,8 +110,7 @@ class AccountHelper:
             email=email
         )
 
-        response = self.dm_account.account_api.post_v1_account(reg_data=reg_data)
-        assert response.status_code == 201, f'Пользователь не был создан {response.json()}'
+        self.dm_account.account_api.post_v1_account(reg_data=reg_data)
 
         token = self.get_activation_token_by_login(login=login)
         assert token is not None, f'Токен для пользователя {login}, не был получен'
@@ -167,8 +166,6 @@ class AccountHelper:
 
         if validate_headers:
             assert response.headers["x-dm-auth-token"], "Токен для пользователя не был получен"
-
-        assert response.status_code == 200, 'Пользователь не смог авторизоваться'
 
         return response
 
