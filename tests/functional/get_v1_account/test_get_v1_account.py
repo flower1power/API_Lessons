@@ -11,7 +11,7 @@ from dm_api_account.models.UserEnvelope import UserRole
 
 
 def test_get_v1_account_auth(auth_account_helper):
-    with check_status_code_http(200, 'asdas'):
+    with check_status_code_http():
         response = auth_account_helper.dm_account.account_api.get_v1_account()
 
         assert_that(
