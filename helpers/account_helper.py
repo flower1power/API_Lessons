@@ -130,7 +130,7 @@ class AccountHelper:
             login: str,
             password: str,
             remember_me: bool = True,
-            validate_response=False
+            validate_response=False,
     ) -> Response | UserEnvelope:
         """
         Авторизация пользователя в системе.
@@ -162,6 +162,7 @@ class AccountHelper:
         if validate_response:
             return response
 
+        assert response.headers["x-dm-auth-token"], "Токен для пользователя не был получен"
         assert response.status_code == 200, 'Пользователь не смог авторизоваться'
 
         return response

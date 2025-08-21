@@ -52,7 +52,7 @@ def prepare_user():
     data = now.strftime("%d_%m_%Y_%H_%M_%S")
     faker = Faker()
 
-    login = faker.name().replace(' ', '') + data
+    login = faker.name().replace(' ', '') + "_" + data
     password = faker.password(length=10, special_chars=False)
     email = f'{login}@mail.ru'
     User = namedtuple("user", ["login", "password", "email"])
