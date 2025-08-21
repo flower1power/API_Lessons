@@ -31,7 +31,7 @@ class LoginApi(RestClient):
         """
         response = self.post(
             path=self._v1_login,
-            json=login_data,
+            json=login_data.model_dump(exclude_none=True, by_alias=True),
             **kwargs
         )
 
