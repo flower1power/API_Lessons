@@ -155,7 +155,7 @@ class AccountHelper:
         )
 
         response = self.dm_account.login_api.post_v1_account_login(
-            login_data=login_data.model_dump(exclude_none=True, by_alias=True),
+            login_data=login_data,
             validate_response=validate_response
         )
 
@@ -292,7 +292,7 @@ class AccountHelper:
         )
 
         self.dm_account.account_api.post_v1_account_password(
-            login_data.model_dump(exclude_none=True),
+            login_data=login_data,
             validate_response=validate_response
         )
 
@@ -307,7 +307,7 @@ class AccountHelper:
         )
 
         response = self.dm_account.account_api.put_v1_account_change_password(
-            change_password_data=change_password_data.model_dump(exclude_none=True, by_alias=True),
+            change_password_data=change_password_data,
             validate_response=validate_response
         )
 
@@ -332,7 +332,7 @@ class AccountHelper:
         )
 
         response = self.dm_account.account_api.put_v1_account_change_email(
-            change_email_data=change_email_data.model_dump(exclude_none=True),
+            change_email_data=change_email_data,
             validate_response=validate_response
         )
 

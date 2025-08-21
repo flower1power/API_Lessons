@@ -34,7 +34,7 @@ class ColorSchema(str, Enum):
 
 
 class PagingSettings(BaseModel):
-    postsPerPage: int
+    posts_per_page: int = Field(..., alias="postsPerPage")
     commentsPerPage: int
     topicsPerPage: int
     messagesPerPage: int

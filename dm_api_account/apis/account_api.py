@@ -97,7 +97,7 @@ class AccountApi(RestClient):
                                  **kwargs: Any) -> UserEnvelope | Response:
         response = self.post(
             path=f'{self._v1_account}/password',
-            json=login_data,
+            json=login_data.model_dump(exclude_none=True),
             **kwargs
         )
 
@@ -110,7 +110,7 @@ class AccountApi(RestClient):
         response = self.put(
             path=f'{self._v1_account}/password',
             headers=self.session.headers,
-            json=change_password_data,
+            json=change_password_data.model_dump(exclude_none=True, by_alias=True),
             **kwargs
         )
 
@@ -138,7 +138,7 @@ class AccountApi(RestClient):
         """
         response = self.put(
             path=f'{self._v1_account}/email',
-            json=change_email_data,
+            json=change_email_data.model_dump(exclude_none=True),
             **kwargs
         )
 
