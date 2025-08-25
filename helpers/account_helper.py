@@ -4,8 +4,12 @@ from typing import Any, Callable, NoReturn
 
 from requests.models import Response
 
-from dm_api_account.apis.account_api import UserCredentials
-from dm_api_account.apis.login_api import UserLoginData
+from dm_api_account.models.ChangeEmail import ChangeEmail
+from dm_api_account.models.ChangePassword import ChangePassword
+from dm_api_account.models.LoginCredentials import LoginCredentials
+from dm_api_account.models.Registration import Registration
+from dm_api_account.models.ResetPassword import ResetPassword
+from dm_api_account.models.UserEnvelope import UserEnvelope
 from services.api_dm_account import ApiDmAccount
 from services.api_mailhog import ApiMailhog
 
@@ -55,7 +59,7 @@ def retrier(function: Callable[..., str | NoReturn]) -> Callable[..., str | NoRe
 
             if count == 10:
                 raise AssertionError("Превышено количество попыток получения токена")
-            sleep = sleep * count
+            sleep = sleep * (count / 2)
             time.sleep(sleep)
 
     return wrapper
@@ -73,7 +77,13 @@ class AccountHelper:
         self.dm_account = api_dm_account
         self.mailhog = api_mailhog
 
-    def register_new_user(self, login: str, password: str, email: str) -> Response:
+    def register_new_user(
+            self,
+            login: str,
+            password: str,
+            email: str,
+            validate_response=True
+    ) -> Response | UserEnvelope:
         """
         Регистрация нового пользователя с последующей активацией.
         
@@ -84,6 +94,7 @@ class AccountHelper:
             login (str): Логин пользователя
             password (str): Пароль пользователя
             email (str): Email адрес пользователя
+            validate_response (bool): Отключение валлидации pydantic
             
         Returns:
             Response: HTTP ответ от сервера после активации пользователя
@@ -92,31 +103,45 @@ class AccountHelper:
             AssertionError: Если пользователь не был создан, токен не получен
             или пользователь не был активирован
         """
-        json_data: UserCredentials = {
-            "login": login,
-            "email": email,
-            "password": password,
-        }
 
-        response = self.dm_account.account_api.post_v1_account(json_data=json_data)
-        assert response.status_code == 201, f'Пользователь не был создан {response.json()}'
+        reg_data = Registration(
+            login=login,
+            password=password,
+            email=email
+        )
+
+        self.dm_account.account_api.post_v1_account(reg_data=reg_data)
 
         token = self.get_activation_token_by_login(login=login)
         assert token is not None, f'Токен для пользователя {login}, не был получен'
 
-        response = self.dm_account.account_api.put_v1_account_token(token=token)
+        response = self.dm_account.account_api.put_v1_account_token(token=token, validate_response=validate_response)
+
+        if validate_response:
+            return response
+
         assert response.status_code == 200, 'Пользователь не был активирован'
 
         return response
 
-    def user_login(self, login: str, password: str, rememberMe: bool = True) -> Response:
+    def user_login(
+            self,
+            login: str,
+            password: str,
+            remember_me: bool = True,
+            validate_response=False,
+            validate_headers=False,
+
+    ) -> Response | UserEnvelope:
         """
         Авторизация пользователя в системе.
         
         Args:
             login (str): Логин пользователя
             password (str): Пароль пользователя
-            rememberMe (bool, optional): Флаг "запомнить меня". По умолчанию True
+            remember_me (bool, optional): Флаг "запомнить меня". По умолчанию True
+            validate_response (bool): Отключение валлидации pydantic
+            validate_headers (bool): Отключение валлидации headers
             
         Returns:
             Response: HTTP ответ от сервера с результатом авторизации
@@ -124,18 +149,27 @@ class AccountHelper:
         Raises:
             AssertionError: Если пользователь не смог авторизоваться
         """
-        json_data: UserLoginData = {
-            'login': login,
-            'password': password,
-            'rememberMe': rememberMe
-        }
 
-        response = self.dm_account.login_api.post_v1_account_login(json_data=json_data)
-        assert response.status_code == 200, 'Пользователь не смог авторизоваться'
+        login_data = LoginCredentials(
+            login=login,
+            password=password,
+            rememberMe=remember_me
+        )
+
+        response = self.dm_account.login_api.post_v1_account_login(
+            login_data=login_data,
+            validate_response=validate_response
+        )
+
+        if validate_response:
+            return response
+
+        if validate_headers:
+            assert response.headers["x-dm-auth-token"], "Токен для пользователя не был получен"
 
         return response
 
-    def auth_user(self, login: str, password: str) -> None:
+    def auth_user(self, login: str, password: str, remember_me: bool = True, validate_response=False) -> None:
         """
         Авторизация клиента и установка токена аутентификации в заголовки.
         
@@ -145,23 +179,25 @@ class AccountHelper:
         Args:
             login (str): Логин пользователя
             password (str): Пароль пользователя
+            remember_me (bool, optional): Флаг "запомнить меня". По умолчанию True
+            validate_response (bool): Отключение валлидации pydantic
 
         Raises:
             AssertionError: Если пользователь не смог авторизоваться
         """
-        response = self.dm_account.login_api.post_v1_account_login(
-            json_data={'login': login, 'password': password}
-        )
-        assert response.status_code == 200, 'Пользователь не смог авторизоваться'
 
-        token = {
-            "x-dm-auth-token": response.headers["x-dm-auth-token"]
-        }
+        response = self.user_login(
+            login=login,
+            password=password,
+            remember_me=remember_me,
+            validate_response=validate_response
+        )
+
+        token = {"x-dm-auth-token": response.headers["x-dm-auth-token"]}
 
         self.dm_account.account_api.set_headers(token)
         self.dm_account.login_api.set_headers(token)
 
-    # @retry(stop_max_attempt_number=5, retry_on_result=retry_if_result_none, wait_fixed=1000)
     @retrier
     def get_activation_token_by_login(self, login: str) -> str:
         """
@@ -222,7 +258,14 @@ class AccountHelper:
 
         return token
 
-    def change_password(self, login: str, email: str, old_password: str, new_password: str) -> Response:
+    def change_password(
+            self,
+            login: str,
+            email: str,
+            old_password: str,
+            new_password: str,
+            validate_response: bool = True
+    ) -> Response | UserEnvelope:
         """
         Смена пароля пользователя с использованием токена сброса пароля.
         
@@ -236,6 +279,8 @@ class AccountHelper:
             email (str): Email адрес пользователя
             old_password (str): Текущий пароль пользователя
             new_password (str): Новый пароль пользователя
+            validate_response (bool): Включение валлидации pydantic
+
             
         Returns:
             Response: HTTP ответ от сервера с результатом смены пароля
@@ -243,21 +288,61 @@ class AccountHelper:
         Raises:
             AssertionError: Если токен сброса пароля не получен или смена пароля не удалась
         """
-        self.dm_account.account_api.post_v1_account_password(login=login, email=email)
+
+        login_data = ResetPassword(
+            login=login,
+            email=email
+        )
+
+        self.dm_account.account_api.post_v1_account_password(
+            login_data=login_data,
+            validate_response=validate_response
+        )
+
         reset_token = self.get_reset_password_token_by_login(login=login)
         assert reset_token is not None, f'Токен для сброса пароля пользователя {login} не был получен'
 
-        response = self.dm_account.account_api.put_v1_account_change_password(
-            {"login": login, "token": reset_token, "oldPassword": old_password, "newPassword": new_password})
-        assert response.status_code == 200, 'Не удалось изменить пароль'
+        change_password_data = ChangePassword(
+            login=login,
+            token=reset_token,
+            oldPassword=old_password,
+            newPassword=new_password
+        )
 
+        response = self.dm_account.account_api.put_v1_account_change_password(
+            change_password_data=change_password_data,
+            validate_response=validate_response
+        )
+
+        if validate_response:
+            return response
+
+        assert response.status_code == 200, 'Не удалось изменить пароль'
         return response
 
-    def change_email(self, login: str, new_email: str, password: str) -> Response:
-        response = self.dm_account.account_api.put_v1_account_change_email(
-            {"login": login, "password": password, "email": new_email})
-        assert response.status_code == 200, 'Не удалось изменить почту'
+    def change_email(
+            self,
+            login: str,
+            password: str,
+            new_email: str,
+            validate_response: bool = True
+    ) -> Response | UserEnvelope:
 
+        change_email_data = ChangeEmail(
+            login=login,
+            password=password,
+            email=new_email
+        )
+
+        response = self.dm_account.account_api.put_v1_account_change_email(
+            change_email_data=change_email_data,
+            validate_response=validate_response
+        )
+
+        if validate_response:
+            return response
+
+        assert response.status_code == 200, 'Не удалось изменить почту'
         return response
 
     def logout_user(self, token: str | None = None, **kwargs: Any) -> Response:
@@ -285,6 +370,7 @@ class AccountHelper:
             kwargs['headers'] = {**kwargs.get('headers'), 'x-dm-auth-token': token}
 
         response = self.dm_account.login_api.delete_v1_account_login(**kwargs)
+
         assert response.status_code == 204, 'Не удалось выйти из аккаунта'
 
         return response
@@ -318,19 +404,23 @@ class AccountHelper:
 
         return response
 
-    def activate_user(self, token: str) -> Response:
+    def activate_user(self, token: str, validate_response: bool = True, ) -> Response | UserEnvelope:
         """
         Активация зарегистрированного пользователя по токену.
 
         Args:
             token (str): Токен активации, полученный при регистрации
+            validate_response (bool): Включение валлидации pydantic
             **kwargs: Дополнительные параметры для HTTP запроса
 
         Returns:
             Response: HTTP ответ от сервера с результатом активации
         """
 
-        response = self.dm_account.account_api.put_v1_account_token(token=token)
-        assert response.status_code == 200, 'Пользователь не был активирован'
+        response = self.dm_account.account_api.put_v1_account_token(token=token, validate_response=validate_response)
 
+        if validate_response:
+            return response
+
+        assert response.status_code == 200, 'Не удалось активировать токен'
         return response

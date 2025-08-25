@@ -1,22 +1,10 @@
-from typing import TypedDict, Any
+from typing import Any
 
 from requests.models import Response
 
+from dm_api_account.models.LoginCredentials import LoginCredentials
+from dm_api_account.models.UserEnvelope import UserEnvelope
 from rest_client.client import RestClient
-
-
-class UserLoginData(TypedDict):
-    """
-    Структура данных для аутентификации пользователя.
-    
-    Attributes:
-        login (str): Логин пользователя
-        password (str): Пароль пользователя
-        rememberMe (bool): Флаг "запомнить меня" для сохранения сессии
-    """
-    login: str
-    password: str
-    rememberMe: bool
 
 
 class LoginApi(RestClient):
@@ -29,12 +17,13 @@ class LoginApi(RestClient):
 
     _v1_login = '/v1/account/login'
 
-    def post_v1_account_login(self, json_data: UserLoginData, **kwargs: Any) -> Response:
+    def post_v1_account_login(self, login_data: LoginCredentials, validate_response: bool = True,
+                              **kwargs: Any) -> UserEnvelope | Response:
         """
         Аутентификация пользователя по учетным данным.
         
         Args:
-            json_data (UserLoginData): Данные для входа в систему
+            login_data (RequestPostV1Login): Данные для входа в систему
             **kwargs: Дополнительные параметры для HTTP запроса
             
         Returns:
@@ -42,9 +31,13 @@ class LoginApi(RestClient):
         """
         response = self.post(
             path=self._v1_login,
-            json=json_data,
+            json=login_data.model_dump(exclude_none=True, by_alias=True),
             **kwargs
         )
+
+        if validate_response:
+            return UserEnvelope(**response.json())
+
         return response
 
     def delete_v1_account_login(self, **kwargs: Any) -> Response:
