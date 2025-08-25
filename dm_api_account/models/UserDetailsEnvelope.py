@@ -4,13 +4,7 @@ from typing import List
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from dm_api_account.models.UserEnvelope import UserRole
-
-
-class Rating(BaseModel):
-    enabled: bool
-    quality: int
-    quantity: int
+from dm_api_account.models.UserEnvelope import UserRole, Rating
 
 
 class BbParseMode(str, Enum):
