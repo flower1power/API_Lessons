@@ -23,8 +23,8 @@ class LoginApi(RestClient):
         Аутентификация пользователя по учетным данным.
         
         Args:
-            login_data (RequestPostV1Login): Данные для входа в систему
-            **kwargs:  Дополнительные параметры для HTTP запроса
+            login_data (LoginCredentials): Данные для входа в систему
+            **kwargs: Дополнительные параметры для HTTP запроса
             
         Returns:
             Response: HTTP ответ от сервера с результатом аутентификации

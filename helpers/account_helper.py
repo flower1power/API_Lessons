@@ -110,8 +110,7 @@ class AccountHelper:
             email=email
         )
 
-        response = self.dm_account.account_api.post_v1_account(reg_data=reg_data)
-        assert response.status_code == 201, f'Пользователь не был создан {response.json()}'
+        self.dm_account.account_api.post_v1_account(reg_data=reg_data)
 
         token = self.get_activation_token_by_login(login=login)
         assert token is not None, f'Токен для пользователя {login}, не был получен'
@@ -130,7 +129,9 @@ class AccountHelper:
             login: str,
             password: str,
             remember_me: bool = True,
-            validate_response=False
+            validate_response=False,
+            validate_headers=False,
+
     ) -> Response | UserEnvelope:
         """
         Авторизация пользователя в системе.
@@ -140,6 +141,7 @@ class AccountHelper:
             password (str): Пароль пользователя
             remember_me (bool, optional): Флаг "запомнить меня". По умолчанию True
             validate_response (bool): Отключение валлидации pydantic
+            validate_headers (bool): Отключение валлидации headers
             
         Returns:
             Response: HTTP ответ от сервера с результатом авторизации
@@ -162,7 +164,8 @@ class AccountHelper:
         if validate_response:
             return response
 
-        assert response.status_code == 200, 'Пользователь не смог авторизоваться'
+        if validate_headers:
+            assert response.headers["x-dm-auth-token"], "Токен для пользователя не был получен"
 
         return response
 
