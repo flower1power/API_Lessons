@@ -121,7 +121,9 @@ class RestClient:
         full_url = urljoin(self.host, path.lstrip("/"))
 
         if self.disable_log:
-            return self.session.request(method=method, url=full_url, **kwargs)
+            rest_response = self.session.request(method=method, url=full_url, **kwargs)
+            rest_response.raise_for_status()
+            return rest_response
 
         log.msg(
             event='Request',
@@ -145,6 +147,7 @@ class RestClient:
             json=self._get_json(rest_response=rest_response),
         )
 
+        rest_response.raise_for_status()
         return rest_response
 
     @staticmethod
