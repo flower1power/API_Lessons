@@ -11,14 +11,14 @@ from dm_api_account.models.UserEnvelope import UserRole
 
 class GetV1Account:
     @classmethod
-    def check_response_values(cls, response):
+    def check_response_values(cls, response, login):
         assert_that(
             response,
             has_property(
                 "resource",
                 all_of(
                     has_properties({
-                        "login": starts_with("DarrenDalton12_08_2025_22_43_04"),
+                        "login": starts_with(login),
                         "roles": all_of(
                             contains_inanyorder(UserRole.GUEST, UserRole.PLAYER),
                             has_length(2)
