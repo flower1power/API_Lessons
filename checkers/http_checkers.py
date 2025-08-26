@@ -1,9 +1,11 @@
 from contextlib import contextmanager
 
+import allure
 import requests
 from requests.exceptions import HTTPError
 
 
+@allure.step("Проверка ответа http")
 @contextmanager
 def check_status_code_http(
         expected_status_code: requests.codes = requests.codes.OK,
