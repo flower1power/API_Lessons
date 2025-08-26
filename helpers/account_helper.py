@@ -1,5 +1,5 @@
 import time
-from json import loads
+from json import loads, JSONDecodeError
 from typing import Any, Callable, NoReturn
 
 from requests.models import Response
@@ -220,10 +220,14 @@ class AccountHelper:
         assert response.status_code == 200, 'Письма не были получены'
 
         for item in response.json()['items']:
-            user_data = loads(item['Content']['Body'])
-            user_login = user_data['Login']
+            try:
+                user_data = loads(item['Content']['Body'])
+            except JSONDecodeError:
+                continue
+            user_login = user_data.get('Login')
             if user_login == login:
                 token = user_data['ConfirmationLinkUrl'].split('/')[-1]
+                break
 
         return token
 
@@ -249,12 +253,15 @@ class AccountHelper:
         response = self.mailhog.mailhog_api.get_api_v2_messages()
         assert response.status_code == 200, 'Письма не были получены'
         for item in response.json()['items']:
-            user_data = loads(item['Content']['Body'])
-            user_login = user_data['Login']
+            try:
+                user_data = loads(item['Content']['Body'])
+            except JSONDecodeError:
+                continue
+            user_login = user_data.get('Login')
             if user_login == login:
-                # Используем только ConfirmationLinkUri для получения токена сброса пароля
                 if 'ConfirmationLinkUri' in user_data:
                     token = user_data['ConfirmationLinkUri'].split('/')[-1]
+                    break
 
         return token
 
