@@ -7,10 +7,6 @@ permissions:
   id-token: write
   pages: write
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
-
 jobs:
   test:
     name: Python tests
@@ -43,7 +39,7 @@ jobs:
     needs: test
     name: Generate report
     steps:
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v4
         with:
           distribution: 'microsoft'
           java-version: '17'
