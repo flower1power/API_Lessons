@@ -9,8 +9,8 @@ permissions:
   pages: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   test:
