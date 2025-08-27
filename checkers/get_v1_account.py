@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import allure
 from hamcrest import (
     assert_that, has_property, starts_with, all_of, instance_of, has_properties, equal_to,
     contains_inanyorder, has_length, none
@@ -11,6 +12,7 @@ from dm_api_account.models.UserEnvelope import UserRole
 
 class GetV1Account:
     @classmethod
+    @allure.step("Проверка ответа метода GET v1_account")
     def check_response_values(cls, response, login):
         assert_that(
             response,

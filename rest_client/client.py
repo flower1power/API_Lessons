@@ -9,6 +9,7 @@ from requests.exceptions import JSONDecodeError
 from requests.models import Response
 
 from rest_client.configuration import Configuration
+from rest_client.utilites import allure_attach
 
 HttpMethod = Literal["GET", "POST", "PUT", "DELETE"]
 
@@ -102,6 +103,7 @@ class RestClient:
         """
         return self._send_request(method="DELETE", path=path, **kwargs)
 
+    @allure_attach
     def _send_request(self, method: HttpMethod, path: str, **kwargs: Any) -> Response:
         """
         Внутренний метод для выполнения HTTP запросов.
