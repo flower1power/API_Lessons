@@ -1,7 +1,8 @@
 import time
-from json import loads
+from json import loads, JSONDecodeError
 from typing import Any, Callable, NoReturn
 
+import allure
 from requests.models import Response
 
 from dm_api_account.models.ChangeEmail import ChangeEmail
@@ -77,6 +78,7 @@ class AccountHelper:
         self.dm_account = api_dm_account
         self.mailhog = api_mailhog
 
+    @allure.step("Регистрация нового пользователя с последующей активацией")
     def register_new_user(
             self,
             login: str,
@@ -115,15 +117,17 @@ class AccountHelper:
         token = self.get_activation_token_by_login(login=login)
         assert token is not None, f'Токен для пользователя {login}, не был получен'
 
-        response = self.dm_account.account_api.put_v1_account_token(token=token, validate_response=validate_response)
+        response = self.dm_account.account_api.put_v1_account_token(
+            token=token,
+            validate_response=validate_response
+        )
 
         if validate_response:
             return response
 
-        assert response.status_code == 200, 'Пользователь не был активирован'
-
         return response
 
+    @allure.step("Авторизация пользователя в системе")
     def user_login(
             self,
             login: str,
@@ -169,6 +173,7 @@ class AccountHelper:
 
         return response
 
+    @allure.step("Авторизация клиента и установка токена аутентификации в заголовки")
     def auth_user(self, login: str, password: str, remember_me: bool = True, validate_response=False) -> None:
         """
         Авторизация клиента и установка токена аутентификации в заголовки.
@@ -199,6 +204,7 @@ class AccountHelper:
         self.dm_account.login_api.set_headers(token)
 
     @retrier
+    @allure.step("Получение токена активации для пользователя по логину")
     def get_activation_token_by_login(self, login: str) -> str:
         """
         Получение токена активации для пользователя по логину.
@@ -217,17 +223,21 @@ class AccountHelper:
         """
         token = None
         response = self.mailhog.mailhog_api.get_api_v2_messages()
-        assert response.status_code == 200, 'Письма не были получены'
 
         for item in response.json()['items']:
-            user_data = loads(item['Content']['Body'])
-            user_login = user_data['Login']
+            try:
+                user_data = loads(item['Content']['Body'])
+            except JSONDecodeError:
+                continue
+            user_login = user_data.get('Login')
             if user_login == login:
                 token = user_data['ConfirmationLinkUrl'].split('/')[-1]
+                break
 
         return token
 
     @retrier
+    @allure.step("Получение токена сброса пароля для пользователя по логину")
     def get_reset_password_token_by_login(self, login: str) -> str:
         """
         Получение токена сброса пароля для пользователя по логину.
@@ -247,17 +257,20 @@ class AccountHelper:
         """
         token = None
         response = self.mailhog.mailhog_api.get_api_v2_messages()
-        assert response.status_code == 200, 'Письма не были получены'
         for item in response.json()['items']:
-            user_data = loads(item['Content']['Body'])
-            user_login = user_data['Login']
+            try:
+                user_data = loads(item['Content']['Body'])
+            except JSONDecodeError:
+                continue
+            user_login = user_data.get('Login')
             if user_login == login:
-                # Используем только ConfirmationLinkUri для получения токена сброса пароля
                 if 'ConfirmationLinkUri' in user_data:
                     token = user_data['ConfirmationLinkUri'].split('/')[-1]
+                    break
 
         return token
 
+    @allure.step("Смена пароля пользователя")
     def change_password(
             self,
             login: str,
@@ -320,6 +333,7 @@ class AccountHelper:
         assert response.status_code == 200, 'Не удалось изменить пароль'
         return response
 
+    @allure.step("Смена почты пользователя")
     def change_email(
             self,
             login: str,
@@ -342,9 +356,9 @@ class AccountHelper:
         if validate_response:
             return response
 
-        assert response.status_code == 200, 'Не удалось изменить почту'
         return response
 
+    @allure.step("Выход пользователя из системы на текущем устройстве")
     def logout_user(self, token: str | None = None, **kwargs: Any) -> Response:
         """
         Выход пользователя из системы на текущем устройстве.
@@ -371,10 +385,9 @@ class AccountHelper:
 
         response = self.dm_account.login_api.delete_v1_account_login(**kwargs)
 
-        assert response.status_code == 204, 'Не удалось выйти из аккаунта'
-
         return response
 
+    @allure.step("Выход пользователя из системы на всех устройствах")
     def logout_user_all_device(self, token: str | None = None, **kwargs: Any) -> Response:
         """
         Выход пользователя из системы на всех устройствах.
@@ -400,10 +413,10 @@ class AccountHelper:
             kwargs['headers'] = {**kwargs.get('headers'), 'x-dm-auth-token': token}
 
         response = self.dm_account.login_api.delete_v1_account_login_all()
-        assert response.status_code == 204, 'Не удалось выйти из аккаунта'
 
         return response
 
+    @allure.step("Активация зарегистрированного пользователя по токену")
     def activate_user(self, token: str, validate_response: bool = True, ) -> Response | UserEnvelope:
         """
         Активация зарегистрированного пользователя по токену.

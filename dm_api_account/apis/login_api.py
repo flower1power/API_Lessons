@@ -1,5 +1,6 @@
 from typing import Any
 
+import allure
 from requests.models import Response
 
 from dm_api_account.models.LoginCredentials import LoginCredentials
@@ -17,6 +18,7 @@ class LoginApi(RestClient):
 
     _v1_login = '/v1/account/login'
 
+    @allure.step("Аутентификация пользователя")
     def post_v1_account_login(self, login_data: LoginCredentials, validate_response: bool = True,
                               **kwargs: Any) -> UserEnvelope | Response:
         """
@@ -40,6 +42,7 @@ class LoginApi(RestClient):
 
         return response
 
+    @allure.step("Выход пользователя из системы на текущем устройстве")
     def delete_v1_account_login(self, **kwargs: Any) -> Response:
         """
         Выход пользователя из системы на текущем устройстве.
@@ -62,6 +65,7 @@ class LoginApi(RestClient):
             **kwargs
         )
 
+    @allure.step("Выход пользователя из системы на всех устройствах")
     def delete_v1_account_login_all(self, **kwargs: Any) -> Response:
         """
         Выход пользователя из системы на всех устройствах.

@@ -1,5 +1,6 @@
 from typing import Any
 
+import allure
 from requests.models import Response
 
 from dm_api_account.models.ChangeEmail import ChangeEmail
@@ -21,6 +22,7 @@ class AccountApi(RestClient):
 
     _v1_account = '/v1/account'
 
+    @allure.step("Регистрация нового пользователя")
     def post_v1_account(self, reg_data: Registration, **kwargs: Any) -> Response:
         """
         Регистрация нового пользователя.
@@ -41,6 +43,7 @@ class AccountApi(RestClient):
 
         return response
 
+    @allure.step("Получение информации о текущем пользователе")
     def get_v1_account(self, validate_response: bool = True, **kwargs: Any) -> Response | UserDetailsEnvelope:
         """
         Получение информации о текущем пользователе.
@@ -62,6 +65,7 @@ class AccountApi(RestClient):
 
         return response
 
+    @allure.step("Активация зарегистрированного пользователя по токену")
     def put_v1_account_token(
             self,
             token: str,
@@ -93,8 +97,20 @@ class AccountApi(RestClient):
 
         return response
 
+    @allure.step("Сброс пароля пользователя")
     def post_v1_account_password(self, login_data: ResetPassword, validate_response: bool = True,
                                  **kwargs: Any) -> UserEnvelope | Response:
+        """
+        Сброс пароля пользователя.
+        
+        Args:
+            login_data (ResetPassword): Данные для сброса пароля
+            validate_response (bool): Включение валлидации pydantic
+            **kwargs: Дополнительные параметры для HTTP запроса
+            
+        Returns:
+            Response | UserEnvelope: HTTP ответ от сервера с результатом сброса пароля | UserEnvelope
+        """
         response = self.post(
             path=f'{self._v1_account}/password',
             json=login_data.model_dump(exclude_none=True),
@@ -105,8 +121,20 @@ class AccountApi(RestClient):
             return UserEnvelope(**response.json())
         return response
 
+    @allure.step("Изменение пароля пользователя")
     def put_v1_account_change_password(self, change_password_data: ChangePassword, validate_response: bool = True,
                                        **kwargs: Any) -> UserEnvelope | Response:
+        """
+        Изменение пароля пользователя.
+        
+        Args:
+            change_password_data (ChangePassword): Данные для изменения пароля
+            validate_response (bool): Включение валлидации pydantic
+            **kwargs: Дополнительные параметры для HTTP запроса
+            
+        Returns:
+            Response | UserEnvelope: HTTP ответ от сервера с результатом изменения пароля | UserEnvelope
+        """
         response = self.put(
             path=f'{self._v1_account}/password',
             headers=self.session.headers,
@@ -118,6 +146,7 @@ class AccountApi(RestClient):
             return UserEnvelope(**response.json())
         return response
 
+    @allure.step("Изменение email адреса зарегистрированного пользователя")
     def put_v1_account_change_email(
             self,
             change_email_data: ChangeEmail,

@@ -1,5 +1,6 @@
 from typing import Any
 
+import allure
 from requests.models import Response
 
 from rest_client.client import RestClient
@@ -16,6 +17,7 @@ class MailhogApi(RestClient):
 
     _v2_messages = '/api/v2/messages'
 
+    @allure.step("Получение писем из почтового ящика Mailhog")
     def get_api_v2_messages(self, limit: int = 50, **kwargs: Any) -> Response:
         """
         Получение писем из почтового ящика Mailhog.
