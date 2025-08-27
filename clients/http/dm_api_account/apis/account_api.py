@@ -3,13 +3,13 @@ from typing import Any
 import allure
 from requests.models import Response
 
-from dm_api_account.models.ChangeEmail import ChangeEmail
-from dm_api_account.models.ChangePassword import ChangePassword
-from dm_api_account.models.Registration import Registration
-from dm_api_account.models.ResetPassword import ResetPassword
-from dm_api_account.models.UserDetailsEnvelope import UserDetailsEnvelope
-from dm_api_account.models.UserEnvelope import UserEnvelope
-from rest_client.client import RestClient
+from clients.http.dm_api_account.models.ChangeEmail import ChangeEmail
+from clients.http.dm_api_account.models.ChangePassword import ChangePassword
+from clients.http.dm_api_account.models.Registration import Registration
+from clients.http.dm_api_account.models.ResetPassword import ResetPassword
+from clients.http.dm_api_account.models.UserDetailsEnvelope import UserDetailsEnvelope
+from clients.http.dm_api_account.models.UserEnvelope import UserEnvelope
+from packages.rest_client.client import RestClient
 
 
 class AccountApi(RestClient):

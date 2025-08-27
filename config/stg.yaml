@@ -6,3 +6,7 @@ service:
 user:
   login: "DarrenDalton12_08_2025_22_43_04"
   password: "C^Uy3BbI8h"
+
+telegram:
+  chat_id: "8328994872"
+  token: "8328994872:AAHW5UvTjB3RDW0xdJmT3XqV2K6RUdwjUBk"

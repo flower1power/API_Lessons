@@ -10,8 +10,8 @@ from requests.models import Response
 from swagger_coverage_py.listener import RequestSchemaHandler
 from swagger_coverage_py.uri import URI
 
-from rest_client.configuration import Configuration
-from rest_client.utilites import allure_attach
+from packages.rest_client.configuration import Configuration
+from packages.rest_client.utilites import allure_attach
 
 HttpMethod = Literal["GET", "POST", "PUT", "DELETE"]
 

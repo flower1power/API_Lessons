@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import allure
 from hamcrest import assert_that, all_of, starts_with, has_property, instance_of, has_properties, equal_to
@@ -9,7 +9,7 @@ class PostV1Account:
     @classmethod
     @allure.step("Проверка ответа POST v1/account")
     def check_response_values(cls, prepare_user, response):
-        today = datetime.now().strftime('%Y-%m-%d')
+        today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
         assert_that(str(response.resource.registration), starts_with(today))
 
