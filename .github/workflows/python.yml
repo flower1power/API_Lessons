@@ -4,6 +4,7 @@ on: [ push, pull_request ]
 
 permissions:
   contents: read
+  packages: write
   id-token: write
   pages: write
 
@@ -43,19 +44,37 @@ jobs:
         with:
           distribution: 'microsoft'
           java-version: '17'
-      - run: sudo wget https://github.com/allure-framework/allure2/releases/download/2.29.0/allure-2.29.0.tgz && sudo tar -xvzf allure-2.29.0.tgz -C /opt/ && sudo ln -s /opt/allure-2.29.0/bin/allure /usr/bin/allure
+
+      - name: Install Allure CLI
+        run: |
+          wget -q https://github.com/allure-framework/allure2/releases/download/2.29.0/allure-2.29.0.tgz
+          sudo tar -xzf allure-2.29.0.tgz -C /opt/
+          sudo ln -sf /opt/allure-2.29.0/bin/allure /usr/bin/allure
+
       - name: Download allure results
         uses: actions/download-artifact@v4
         with:
           name: allure-results
           path: allure-results
-      - run: allure generate -c allure-results -o _site
+
+      - name: Validate allure results
+        run: |
+          if ! find allure-results -type f -name "*-result.json" | grep -q .; then
+            echo "❌ No Allure results found. Skipping report generation."
+            exit 1
+          fi
+
+      - name: Generate Allure report
+        run: allure generate -c allure-results -o _site
+
       - name: Store report
         uses: actions/upload-artifact@v4
         with:
           name: _site
           path: _site
           retention-days: 1
+          if-no-files-found: error
+
 
   publish-report:
     runs-on: ubuntu-latest
@@ -65,16 +84,24 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
       - name: Download site report
         uses: actions/download-artifact@v4
         with:
           name: _site
           path: _site
+
+      - name: Validate report exists
+        run: |
+          if [ ! -s "_site/index.html" ]; then
+            echo "❌ Report index.html not found. Cancelling publish."
+            exit 1
+          fi
+
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
