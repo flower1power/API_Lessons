@@ -8,12 +8,12 @@ permissions:
   id-token: write
   pages: write
 
-concurrency:
-  group: pages-${{ github.ref }}
-  cancel-in-progress: false
 
 jobs:
   test:
+    env:
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
     name: Python tests
     runs-on: ubuntu-latest
     steps:
