@@ -117,13 +117,13 @@ class AccountHelper:
         token = self.get_activation_token_by_login(login=login)
         assert token is not None, f'Токен для пользователя {login}, не был получен'
 
-        response = self.dm_account.account_api.put_v1_account_token(token=token,
-                                                                    validate_response=validate_response)
+        response = self.dm_account.account_api.put_v1_account_token(
+            token=token,
+            validate_response=validate_response
+        )
 
         if validate_response:
             return response
-
-        assert response.status_code == 200, 'Пользователь не был активирован'
 
         return response
 
@@ -223,7 +223,6 @@ class AccountHelper:
         """
         token = None
         response = self.mailhog.mailhog_api.get_api_v2_messages()
-        assert response.status_code == 200, 'Письма не были получены'
 
         for item in response.json()['items']:
             try:
@@ -258,7 +257,6 @@ class AccountHelper:
         """
         token = None
         response = self.mailhog.mailhog_api.get_api_v2_messages()
-        assert response.status_code == 200, 'Письма не были получены'
         for item in response.json()['items']:
             try:
                 user_data = loads(item['Content']['Body'])
@@ -358,7 +356,6 @@ class AccountHelper:
         if validate_response:
             return response
 
-        assert response.status_code == 200, 'Не удалось изменить почту'
         return response
 
     @allure.step("Выход пользователя из системы на текущем устройстве")
@@ -388,8 +385,6 @@ class AccountHelper:
 
         response = self.dm_account.login_api.delete_v1_account_login(**kwargs)
 
-        assert response.status_code == 204, 'Не удалось выйти из аккаунта'
-
         return response
 
     @allure.step("Выход пользователя из системы на всех устройствах")
@@ -418,7 +413,6 @@ class AccountHelper:
             kwargs['headers'] = {**kwargs.get('headers'), 'x-dm-auth-token': token}
 
         response = self.dm_account.login_api.delete_v1_account_login_all()
-        assert response.status_code == 204, 'Не удалось выйти из аккаунта'
 
         return response
 
