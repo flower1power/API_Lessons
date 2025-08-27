@@ -7,9 +7,11 @@ charset-normalizer==3.4.2
 curlify==3.0.0
 distconfig3==1.0.1
 dotenv==0.9.9
+environs==14.3.0
 Faker==37.5.3
 idna==3.10
 iniconfig==2.1.0
+marshmallow==4.0.0
 packaging==25.0
 pluggy==1.6.0
 pydantic==2.11.7
@@ -21,7 +23,11 @@ python-dotenv==1.1.1
 PyYAML==6.0.2
 requests==2.32.4
 retrying==1.4.2
+rootpath==0.1.0
+setuptools==80.9.0
+six==1.17.0
 structlog==25.4.0
+swagger-coverage==3.5.1
 toml==0.10.2
 typing-inspection==0.4.1
 typing_extensions==4.14.1
