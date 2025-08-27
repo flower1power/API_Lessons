@@ -60,7 +60,7 @@ def retrier(function: Callable[..., str | NoReturn]) -> Callable[..., str | NoRe
 
             if count == 10:
                 raise AssertionError("Превышено количество попыток получения токена")
-            sleep = sleep * (count / 2)
+            sleep = sleep * (count / 3)
             time.sleep(sleep)
 
     return wrapper
