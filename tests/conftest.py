@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
 from faker import Faker
 from swagger_coverage_py.reporter import CoverageReporter
 from vyper import v
@@ -14,6 +15,7 @@ from packages.rest_client.configuration import Configuration
 from services.api_dm_account import ApiDmAccount
 from services.api_mailhog import ApiMailhog
 
+load_dotenv()
 options = (
     'service.dm_api_account',
     'service.mailhog',
@@ -42,10 +44,13 @@ def set_config(request):
     v.set_config_name(config_name)
     v.add_config_path(config)
     v.read_in_config()
+    token = os.getenv("TELEGRAM_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+
     for option in options:
         v.set(f"{option}", request.config.getoption(f"--{option}"))
-        os.environ["TELEGRAM_BOT_CHAT_ID"] = v.get('telegram.chat_id')
-        os.environ["TELEGRAM_BOT_ACCESS_TOKEN"] = v.get('telegram.token')
+        os.environ["TELEGRAM_BOT_CHAT_ID"] = chat_id
+        os.environ["TELEGRAM_BOT_ACCESS_TOKEN"] = token
         request.config.stash['telegram-notifier-addfields']['enviroment'] = config_name
         request.config.stash['telegram-notifier-addfields']['report'] = 'https://flower1power.github.io/API_Lessons/'
 
