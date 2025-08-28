@@ -45,8 +45,8 @@ def set_config(request):
     v.read_in_config()
     for option in options:
         v.set(f"{option}", request.config.getoption(f"--{option}"))
-        os.environ["TELEGRAM_BOT_CHAT_ID"] = os.getenv("TELEGRAM_CHAT_ID")
-        os.environ["TELEGRAM_BOT_ACCESS_TOKEN"] = os.getenv("TELEGRAM_TOKEN")
+        os.environ["TELEGRAM_BOT_CHAT_ID"] = os.getenv("TELEGRAM_BOT_CHAT_ID")
+        os.environ["TELEGRAM_BOT_ACCESS_TOKEN"] = os.getenv("TELEGRAM_BOT_ACCESS_TOKEN")
         request.config.stash["telegram-notifier-addfields"]["enviroment"] = config_name
         request.config.stash["telegram-notifier-addfields"]["report"] = "https://flower1power.github.io/API_Lessons/"
 

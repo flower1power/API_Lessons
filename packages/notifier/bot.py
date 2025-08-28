@@ -15,8 +15,8 @@ from telebot import TeleBot
 
 
 def send_file() -> None:
-    token = os.getenv("TELEGRAM_TOKEN")
-    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    token = os.getenv("TELEGRAM_BOT_ACCESS_TOKEN")
+    chat_id = os.getenv("TELEGRAM_BOT_CHAT_ID")
     _telegram_bot = TeleBot(token)
 
     file_path = Path(__file__).resolve().parents[2] / "swagger-coverage-dm-api-account.html"
