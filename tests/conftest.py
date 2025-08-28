@@ -16,6 +16,7 @@ from services.api_dm_account import ApiDmAccount
 from services.api_mailhog import ApiMailhog
 
 load_dotenv()
+
 options = (
     'service.dm_api_account',
     'service.mailhog',

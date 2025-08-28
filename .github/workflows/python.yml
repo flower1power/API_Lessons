@@ -10,11 +10,11 @@ permissions:
 
 jobs:
   test:
-    env:
-      TELEGRAM_BOT_ACCESS_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-      TELEGRAM_BOT_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
     name: Python tests
     runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      TELEGRAM_BOT_ACCESS_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
