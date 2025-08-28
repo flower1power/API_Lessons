@@ -1,3 +1,6 @@
+aiohappyeyeballs==2.6.1
+aiohttp==3.12.15
+aiosignal==1.4.0
 allure-pytest==2.15.0
 allure-python-commons==2.15.0
 annotated-types==0.7.0
@@ -9,16 +12,21 @@ distconfig3==1.0.1
 dotenv==0.9.9
 environs==14.3.0
 Faker==37.5.3
+frozenlist==1.7.0
 idna==3.10
 iniconfig==2.1.0
 marshmallow==4.0.0
+multidict==6.6.4
 packaging==25.0
 pluggy==1.6.0
+propcache==0.3.2
 pydantic==2.11.7
 pydantic_core==2.33.2
 Pygments==2.19.2
 PyHamcrest==2.1.0
+pyTelegramBotAPI==4.28.0
 pytest==8.4.1
+pytest-telegram-notifier==1.4.0
 python-dotenv==1.1.1
 PyYAML==6.0.2
 requests==2.32.4
@@ -28,6 +36,7 @@ setuptools==80.9.0
 six==1.17.0
 structlog==25.4.0
 swagger-coverage==3.5.1
+telebot==0.0.5
 toml==0.10.2
 typing-inspection==0.4.1
 typing_extensions==4.14.1
@@ -35,3 +44,5 @@ tzdata==2025.2
 urllib3==2.5.0
 vyper-config==1.2.1
 watchdog==6.0.0
+wheel==0.45.1
+yarl==1.20.1

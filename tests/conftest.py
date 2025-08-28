@@ -1,17 +1,21 @@
+import os
 from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
 from faker import Faker
 from swagger_coverage_py.reporter import CoverageReporter
 from vyper import v
 
 from helpers.account_helper import AccountHelper
-from rest_client.configuration import Configuration
+from packages.notifier.bot import send_file
+from packages.rest_client.configuration import Configuration
 from services.api_dm_account import ApiDmAccount
 from services.api_mailhog import ApiMailhog
 
+load_dotenv()
 options = (
     'service.dm_api_account',
     'service.mailhog',
@@ -28,6 +32,7 @@ def setup_swagger_coverage():
 
     yield
     reporter.generate_report()
+    send_file()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -39,7 +44,13 @@ def set_config(request):
     v.read_in_config()
     for option in options:
         v.set(f"{option}", request.config.getoption(f"--{option}"))
+        os.environ["TELEGRAM_BOT_CHAT_ID"] = os.getenv("TELEGRAM_CHAT_ID")
+        os.environ["TELEGRAM_BOT_ACCESS_TOKEN"] = os.getenv("TELEGRAM_TOKEN")
+        request.config.stash["telegram-notifier-addfields"]["enviroment"] = config_name
+        request.config.stash["telegram-notifier-addfields"]["report"] = "https://flower1power.github.io/API_Lessons/"
 
+
+# TELEGRAM_BOT_ACCESS_TOKEN
 
 def pytest_addoption(parser):
     parser.addoption("--env", action="store", default="dev", help="run dev")

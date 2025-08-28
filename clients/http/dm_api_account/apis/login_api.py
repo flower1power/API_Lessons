@@ -3,9 +3,9 @@ from typing import Any
 import allure
 from requests.models import Response
 
-from dm_api_account.models.LoginCredentials import LoginCredentials
-from dm_api_account.models.UserEnvelope import UserEnvelope
-from rest_client.client import RestClient
+from clients.http.dm_api_account.models.LoginCredentials import LoginCredentials
+from clients.http.dm_api_account.models.UserEnvelope import UserEnvelope
+from packages.rest_client.client import RestClient
 
 
 class LoginApi(RestClient):
