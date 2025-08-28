@@ -4,7 +4,7 @@ from typing import List
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from dm_api_account.models.UserEnvelope import UserRole, Rating
+from clients.http.dm_api_account.models.UserEnvelope import UserRole, Rating
 
 
 class BbParseMode(str, Enum):

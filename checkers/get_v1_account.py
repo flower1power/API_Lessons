@@ -6,8 +6,8 @@ from hamcrest import (
     contains_inanyorder, has_length, none
 )
 
-from dm_api_account.models.UserDetailsEnvelope import ColorSchema
-from dm_api_account.models.UserEnvelope import UserRole
+from clients.http.dm_api_account.models.UserDetailsEnvelope import ColorSchema
+from clients.http.dm_api_account.models.UserEnvelope import UserRole
 
 
 class GetV1Account:

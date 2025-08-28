@@ -3,7 +3,7 @@ from typing import Any
 import allure
 from requests.models import Response
 
-from rest_client.client import RestClient
+from packages.rest_client.client import RestClient
 
 
 class MailhogApi(RestClient):
