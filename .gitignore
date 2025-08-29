@@ -28,6 +28,9 @@ MANIFEST
 allure-results
 allure-results-report
 .vscode
+swagger*.html
+swagger*.json
+swagger-coverage-output/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
