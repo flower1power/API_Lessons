@@ -5,12 +5,12 @@ from typing import Any, Callable, NoReturn
 import allure
 from requests.models import Response
 
-from dm_api_account.models.ChangeEmail import ChangeEmail
-from dm_api_account.models.ChangePassword import ChangePassword
-from dm_api_account.models.LoginCredentials import LoginCredentials
-from dm_api_account.models.Registration import Registration
-from dm_api_account.models.ResetPassword import ResetPassword
-from dm_api_account.models.UserEnvelope import UserEnvelope
+from clients.http.dm_api_account.models.ChangeEmail import ChangeEmail
+from clients.http.dm_api_account.models.ChangePassword import ChangePassword
+from clients.http.dm_api_account.models.LoginCredentials import LoginCredentials
+from clients.http.dm_api_account.models.Registration import Registration
+from clients.http.dm_api_account.models.ResetPassword import ResetPassword
+from clients.http.dm_api_account.models.UserEnvelope import UserEnvelope
 from services.api_dm_account import ApiDmAccount
 from services.api_mailhog import ApiMailhog
 
@@ -58,7 +58,7 @@ def retrier(function: Callable[..., str | NoReturn]) -> Callable[..., str | NoRe
             if token:
                 return token
 
-            if count == 10:
+            if count == 15:
                 raise AssertionError("Превышено количество попыток получения токена")
             sleep = sleep * (count / 3)
             time.sleep(sleep)

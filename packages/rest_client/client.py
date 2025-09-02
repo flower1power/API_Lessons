@@ -7,9 +7,11 @@ import structlog
 from requests import session
 from requests.exceptions import JSONDecodeError
 from requests.models import Response
+from swagger_coverage_py.listener import RequestSchemaHandler
+from swagger_coverage_py.uri import URI
 
-from rest_client.configuration import Configuration
-from rest_client.utilites import allure_attach
+from packages.rest_client.configuration import Configuration
+from packages.rest_client.utilites import allure_attach
 
 HttpMethod = Literal["GET", "POST", "PUT", "DELETE"]
 
@@ -138,6 +140,12 @@ class RestClient:
         )
 
         rest_response = self.session.request(method=method, url=full_url, **kwargs)
+
+        uri = URI(host=self.host, base_path="", unformatted_path=path, uri_params=kwargs.get('params'))
+
+        RequestSchemaHandler(
+            uri=uri, method=method.lower(), response=rest_response, kwargs=kwargs
+        ).write_schema()
 
         curl = curlify.to_curl(rest_response.request)
         print(curl)
