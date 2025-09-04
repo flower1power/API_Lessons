@@ -58,7 +58,7 @@ def retrier(function: Callable[..., str | NoReturn]) -> Callable[..., str | NoRe
             if token:
                 return token
 
-            if count == 10:
+            if count == 15:
                 raise AssertionError("Превышено количество попыток получения токена")
             sleep = sleep * (count / 3)
             time.sleep(sleep)
